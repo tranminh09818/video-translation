@@ -490,7 +490,7 @@ async function callGemini(url, body, maxTry){
   maxTry=maxTry||3;
   for(var t=0;t<maxTry;t++){
     var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(res.status===429){ await sleep(Math.pow(2,t)*4000); continue; } // Tăng thời gian chờ khi bị chặn
+    if(res.status===429){ await sleep(Math.pow(2,t)*1200); continue; }
     if(!res.ok){
       var j=await res.json().catch(function(){return{};});
       throw new Error((j.error&&j.error.message)||'HTTP '+res.status);
@@ -614,7 +614,7 @@ async function runProcess(){
       var ttsUrl='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key='+key;
 
       // ✅ FIX: batch 3 requests song song thay vì tuần tự
-      var BATCH=1; // Giảm xuống 1 để xử lý từng câu, tránh bị mất tiếng
+      var BATCH=3;
       for(var i=0;i<S.segs.length;i+=BATCH){
         var batch=[];
         for(var j=i;j<Math.min(i+BATCH,S.segs.length);j++) batch.push(j);
@@ -786,14 +786,6 @@ function playTts(idx){
   },{once:true});
 
   a.volume=1.0; // TTS luôn max volume
-  
-  // ✅ FIX: Kết nối giọng đọc vào bộ thu âm khi đang Xuất Video
-  if(S.recording&&S.audioCtx&&S.recDest){
-    var src=S.audioCtx.createMediaElementSource(a);
-    src.connect(S.recDest); // Đưa vào file ghi hình
-    src.connect(S.audioCtx.destination); // Đưa ra loa để nghe
-  }
-
   a.play().catch(function(e){ console.warn('TTS play failed:',e.message); });
   S.curAudio=a;
 
@@ -839,23 +831,20 @@ D.btnReset.addEventListener('click',function(){
 });
 
 /* ════════════════════════════════════
-   EXPORT
-   AudioContext + srcNode tạo 1 lần duy nhất.
+   EXPORT VIDEO ĐÃ DỊCH
+   Chiến lược:
+   1. Tạo AudioContext mới riêng cho export
+   2. Video audio → GainNode (20% nếu có speech)
+   3. Với mỗi đoạn TTS: decode WAV → schedule
+      AudioBufferSourceNode tại đúng thời điểm
+   4. Tất cả mix vào MediaStreamDestination
+   5. Combine với video track → MediaRecorder
 ════════════════════════════════════ */
 D.btnExport.addEventListener('click', doExport);
 
-async function getAudioCtx(){
-  if(S.audioCtx&&S.audioCtx.state!=='closed'){
-    if(S.audioCtx.state==='suspended') await S.audioCtx.resume();
-    return S.audioCtx;
-  }
-  S.audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  S.srcNode=null;
-  return S.audioCtx;
-}
-
 async function doExport(){
   if(S.recording) return;
+
   if(typeof D.vid.captureStream!=='function'&&typeof D.vid.mozCaptureStream!=='function'){
     showErr('Trình duyệt không hỗ trợ xuất video. Dùng Chrome / Edge mới nhất.'); return;
   }
@@ -868,26 +857,46 @@ async function doExport(){
   D.btnExport.disabled=true; D.btnPreview.disabled=true;
   hideErr();
 
-  var chunks=[],rec;
+  // Đóng AudioContext cũ nếu có (từ preview playback)
+  if(S.audioCtx&&S.audioCtx.state!=='closed'){
+    try{ await S.audioCtx.close(); }catch(e){}
+  }
+  S.audioCtx=null; S.srcNode=null;
+
+  var chunks=[], rec, exportCtx=null;
+
   try{
-    var ctx=await getAudioCtx();
-    var dest=ctx.createMediaStreamDestination();
-    S.recDest=dest; // Lưu lại để playTts có thể kết nối vào
-    
-    // ✅ FIX: Đảm bảo nguồn âm thanh video luôn kết nối ra loa
-    if(!S.srcNode) {
-      S.srcNode=ctx.createMediaElementSource(D.vid);
-      S.srcNode.connect(ctx.destination); // Kết nối ra loa để nghe Preview
+    // Tạo AudioContext mới cho export
+    exportCtx=new (window.AudioContext||window.webkitAudioContext)();
+    var dest=exportCtx.createMediaStreamDestination();
+
+    // --- Kết nối tiếng gốc của video ---
+    var vidSrc=exportCtx.createMediaElementSource(D.vid);
+    var vidGain=exportCtx.createGain();
+    // Nếu có TTS thì giảm tiếng gốc xuống 20%, không có TTS thì giữ 100%
+    vidGain.gain.value=S.hasSpeech&&Object.keys(S.wavs).length>0?0.2:1.0;
+    vidSrc.connect(vidGain);
+    vidGain.connect(dest);
+    vidGain.connect(exportCtx.destination); // để monitor
+
+    // --- Pre-decode tất cả WAV files ---
+    var decodedBuffers={};
+    if(S.hasSpeech){
+      var wavKeys=Object.keys(S.wavs);
+      for(var wi=0;wi<wavKeys.length;wi++){
+        var widx=parseInt(wavKeys[wi]);
+        try{
+          var wavResp=await fetch(S.wavs[widx]);
+          var wavAB=await wavResp.arrayBuffer();
+          decodedBuffers[widx]=await exportCtx.decodeAudioData(wavAB);
+        }catch(e){ console.warn('Decode WAV['+widx+'] failed:',e.message); }
+      }
     }
 
-    // Tạo nhánh riêng cho bộ thu âm (Recorder)
-    var recGain=ctx.createGain();
-    recGain.gain.value=1.0; // Giữ nguyên âm lượng gốc khi vào file (ducking đã có playTts lo)
-    S.srcNode.connect(recGain); 
-    recGain.connect(dest); // Chỉ đưa vào bộ thu, không đưa ra loa lần nữa
-
+    // --- Bắt đầu record ---
     var cap=D.vid.captureStream?D.vid.captureStream():D.vid.mozCaptureStream();
     var ms=new MediaStream([...cap.getVideoTracks(),...dest.stream.getAudioTracks()]);
+
     rec=new MediaRecorder(ms,{mimeType:mime});
     rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
     rec.onstop=function(){
@@ -897,23 +906,73 @@ async function doExport(){
       a.download='vtranslate_'+Date.now()+'.webm';
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); URL.revokeObjectURL(a.href);
-      
-      // Dọn dẹp kết nối thu âm
-      try{ S.srcNode.disconnect(recGain); recGain.disconnect(); }catch(e){}
-      S.recording=false; S.recDest=null;
+      S.recording=false;
       D.recBadge.classList.remove('on');
       D.btnExport.disabled=false; D.btnPreview.disabled=false;
+      try{ exportCtx.close(); }catch(e){}
+      // Khôi phục AudioContext cho playback
+      S.audioCtx=null; S.srcNode=null;
     };
-    rec.start(200);
-    D.vid.currentTime=0; S.lastIdx=-1; stopAudio(); restoreVol();
+
+    // --- Reset video về đầu ---
+    D.vid.currentTime=0;
+    S.lastIdx=-1; S.curAudio=null;
+    D.vid.volume=1.0;
+
+    rec.start(100);
+
+    // --- Play video ---
     await D.vid.play();
-    D.vid.onended=function(){if(rec&&rec.state==='recording')rec.stop();};
+
+    // --- Schedule TTS buffers theo đúng timestamp ---
+    if(S.hasSpeech&&Object.keys(decodedBuffers).length>0){
+      var ctxStartTime=exportCtx.currentTime;
+      var vidStartTime=D.vid.currentTime; // ~0
+
+      Object.keys(decodedBuffers).forEach(function(idxStr){
+        var idx=parseInt(idxStr);
+        var seg=S.segs[idx];
+        if(!seg) return;
+
+        var buf=decodedBuffers[idx];
+        var ttsNode=exportCtx.createBufferSource();
+        ttsNode.buffer=buf;
+
+        // Tính tốc độ đọc để khớp với slot
+        var slotDur=seg.end_s-seg.start_s;
+        if(buf.duration>0&&slotDur>0&&buf.duration>slotDur){
+          ttsNode.playbackRate.value=Math.min(buf.duration/slotDur,1.4);
+        }
+
+        var ttsGain=exportCtx.createGain();
+        ttsGain.gain.value=1.0;
+        ttsNode.connect(ttsGain);
+        ttsGain.connect(dest);
+        ttsGain.connect(exportCtx.destination);
+
+        // Schedule tại đúng thời điểm trong video
+        var startAt=ctxStartTime+(seg.start_s-vidStartTime);
+        ttsNode.start(Math.max(startAt, exportCtx.currentTime+0.05));
+      });
+    }
+
+    // --- Dừng record khi video kết thúc ---
+    D.vid.onended=function(){
+      // Chờ thêm 1s để audio cuối cùng kịp ghi
+      setTimeout(function(){
+        if(rec&&rec.state==='recording') rec.stop();
+      },1000);
+    };
+
   }catch(err){
     showErr('Lỗi xuất video: '+err.message);
+    console.error(err);
     S.recording=false;
     D.recBadge.classList.remove('on');
     D.btnExport.disabled=false; D.btnPreview.disabled=false;
     if(rec&&rec.state==='recording')try{rec.stop();}catch(e){}
+    if(exportCtx)try{exportCtx.close();}catch(e){}
+    S.audioCtx=null; S.srcNode=null;
   }
 }
 </script>
