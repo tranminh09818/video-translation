@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Sync Master Pro - AI Translation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; scroll-behavior: smooth; overflow-x: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .active-segment { 
+            background-color: rgba(37, 99, 235, 0.25); 
+            border-color: rgba(37, 99, 235, 0.6); 
+            opacity: 1 !important; 
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px -2px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="text-slate-100 p-4 md:p-10">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div class="flex items-center gap-4">
+                <div class="relative p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl shadow-2xl">
+                    <i data-lucide="video" class="text-white w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-white tracking-tight uppercase italic">VIDEO <span class="text-blue-500 underline decoration-2 underline-offset-4">SYNC MASTER</span></h1>
+                    <div id="status-badge" class="flex items-center gap-2 text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
+                        <i data-lucide="zap" class="w-3 h-3 text-yellow-500"></i> AI Dịch thuật chọn lọc & Khớp nhịp chuẩn
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <!-- Cột trái: Player -->
+            <div class="lg:col-span-8 space-y-6">
+                <div id="drop-zone" class="relative aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5">
+                    
+                    <div id="upload-placeholder" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-900/40 transition-all z-20">
+                        <input type="file" id="video-input" class="hidden" accept="video/*">
+                        <div class="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-4 border border-blue-500/50">
+                            <i data-lucide="upload-cloud" class="text-blue-500 w-10 h-10 animate-bounce"></i>
+                        </div>
+                        <span class="text-xl font-black text-white uppercase tracking-widest text-center">Tải Video Nguồn</span>
+                        <span class="text-slate-500 text-sm mt-2 font-medium italic text-center px-4">Tự động phân tích: Cái gì cần dịch, cái gì giữ nguyên</span>
+                    </div>
+                    
+                    <video id="main-video" class="w-full h-full object-contain hidden" crossorigin="anonymous" playsinline></video>
+                    
+                    <!-- Lớp phủ Loading -->
+                    <div id="loading-overlay" class="absolute inset-0 bg-black/95 backdrop-blur-xl hidden flex flex-col items-center justify-center z-50 p-6 text-center">
+                        <i data-lucide="loader-2" class="animate-spin text-blue-500 mb-8 w-20 h-20"></i>
+                        <p id="loading-text" class="text-2xl font-black text-white uppercase tracking-tighter animate-pulse px-4">Đang xử lý...</p>
+                        <div class="mt-6 w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- Lớp phủ Phụ đề -->
+                    <div id="subtitle-overlay" class="absolute bottom-12 left-0 right-0 px-12 text-center pointer-events-none transition-all hidden z-30">
+                        <p id="subtitle-text" class="bg-blue-600/90 backdrop-blur-md text-white inline-block px-8 py-4 rounded-2xl font-bold text-xl shadow-2xl border border-white/20"></p>
+                    </div>
+
+                    <div id="recording-badge" class="absolute top-6 right-6 hidden items-center gap-3 bg-red-600 px-6 py-3 rounded-full animate-pulse z-40 shadow-lg text-white">
+                        <i data-lucide="stop-circle" class="w-5 h-5 text-white"></i>
+                        <span class="text-xs font-black uppercase tracking-widest">Đang xuất video...</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="process-btn" disabled class="flex-1 bg-white hover:bg-blue-50 disabled:bg-slate-800 disabled:text-slate-500 text-black font-black py-6 rounded-[2rem] transition-all flex items-center justify-center gap-4 uppercase tracking-widest text-sm shadow-xl">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i> Dịch Thuật & Khớp Nhịp
+                        </button>
+                        
+                        <div id="action-btns" class="hidden flex flex-col sm:flex-row gap-4">
+                            <button id="play-btn" class="px-12 bg-blue-600 hover:bg-blue-500 text-white font-black py-6 rounded-[2rem] transition-all shadow-xl flex items-center justify-center gap-3 uppercase text-xs">
+                                <i data-lucide="play" class="w-5 h-5" fill="currentColor"></i> Xem Thử
+                            </button>
+                            <button id="download-btn" class="px-12 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-6 rounded-[2rem] transition-all shadow-xl flex items-center justify-center gap-3 uppercase text-xs">
+                                <i data-lucide="download" class="w-5 h-5"></i> Tải Video
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Box hiển thị lỗi -->
+                    <div id="error-box" class="hidden bg-red-500/10 border border-red-500/30 p-5 rounded-[1.5rem] flex items-start gap-4">
+                        <i data-lucide="alert-circle" class="text-red-500 w-6 h-6 shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Thông báo lỗi</p>
+                            <p id="error-message" class="text-red-200 text-sm font-medium leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
+                    <button onclick="switchTab('script')" id="tab-script" class="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg">Kịch bản</button>
+                    <button onclick="switchTab('ai-lab')" id="tab-ai-lab" class="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200">✨ AI Lab</button>
+                </div>
+
+                <div id="script-panel" class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[550px]">
+                    <h3 class="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                        <i data-lucide="subtitles" class="text-blue-500 w-5 h-5"></i> Bản dịch đồng bộ
+                    </h3>
+                    <div id="script-container" class="flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-4">
+                        <div class="h-full flex flex-col items-center justify-center text-center opacity-30 italic">
+                            <i data-lucide="mic-2" class="mb-4 text-slate-700 w-12 h-12"></i>
+                            <p class="text-xs font-bold uppercase tracking-widest leading-loose text-slate-500 text-center px-4">Tải video để bắt đầu<br>phân tích dữ liệu</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ai-lab-panel" class="hidden bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[550px]">
+                    <h3 class="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                        <i data-lucide="brain-circuit" class="text-indigo-500 w-5 h-5"></i> Trợ lý sản xuất
+                    </h3>
+                    <div class="space-y-4 overflow-y-auto pr-3 custom-scrollbar">
+                        <button onclick="handleAIService('summary')" id="summary-btn" disabled class="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-30">
+                            <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> ✨ Tóm tắt nội dung
+                        </button>
+                        <button onclick="handleAIService('social')" id="social-btn" disabled class="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-30">
+                            <i data-lucide="share-2" class="w-4 h-4 text-emerald-500"></i> ✨ Viết Caption Viral
+                        </button>
+
+                        <div id="ai-lab-result" class="mt-4 p-5 bg-blue-600/5 border border-blue-500/20 rounded-2xl hidden transition-all">
+                            <div class="flex justify-between items-center mb-3 border-b border-blue-500/10 pb-2">
+                                <span id="result-title" class="text-[10px] font-black text-blue-500 uppercase font-mono">Phân tích</span>
+                                <button onclick="copyToClipboard()" class="text-slate-500 hover:text-white"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                            </div>
+                            <div id="result-text" class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let segments = [];
+        let segmentAudios = {};
+        let hasSpeech = false;
+        let isRecording = false;
+        let lastPlayedIdx = -1;
+        let activeAudios = [];
+        let currentAudioCtx = null;
+
+        // Khởi tạo icons an toàn
+        function safeInitIcons() {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            else setTimeout(safeInitIcons, 100);
+        }
+        window.addEventListener('load', safeInitIcons);
+
+        const videoInput = document.getElementById('video-input');
+        const mainVideo = document.getElementById('main-video');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const processBtn = document.getElementById('process-btn');
+        const actionBtns = document.getElementById('action-btns');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const progressBar = document.getElementById('progress-bar');
+        const subtitleOverlay = document.getElementById('subtitle-overlay');
+        const subtitleText = document.getElementById('subtitle-text');
+        const scriptContainer = document.getElementById('script-container');
+        const errorBox = document.getElementById('error-box');
+        const errorMessage = document.getElementById('error-message');
+
+        uploadPlaceholder.addEventListener('click', () => videoInput.click());
+
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 100 * 1024 * 1024) {
+                    showError("Dung lượng tệp vượt quá 100MB!");
+                    return;
+                }
+                mainVideo.src = URL.createObjectURL(file);
+                mainVideo.classList.remove('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                processBtn.disabled = false;
+                resetState();
+            }
+        });
+
+        function resetState() {
+            segments = [];
+            // Dọn dẹp bộ nhớ Audio cũ
+            Object.values(segmentAudios).forEach(url => URL.revokeObjectURL(url));
+            segmentAudios = {};
+            lastPlayedIdx = -1;
+            scriptContainer.innerHTML = '';
+            actionBtns.classList.add('hidden');
+            subtitleOverlay.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            document.getElementById('summary-btn').disabled = true;
+            document.getElementById('social-btn').disabled = true;
+            document.getElementById('ai-lab-result').classList.add('hidden');
+        }
+
+        function showError(msg) {
+            errorBox.classList.remove('hidden');
+            errorMessage.innerText = msg;
+            loadingOverlay.classList.add('hidden');
+            processBtn.disabled = false;
+        }
+
+        async function fetchGemini(url, payload, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.status === 429) {
+                        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                        continue;
+                    }
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error?.message || `Lỗi HTTP ${response.status}`);
+                    return result;
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+
+        function cleanJsonResponse(text) {
+            const match = text.match(/\{[\s\S]*\}/);
+            return match ? match[0] : text;
+        }
+
+        processBtn.addEventListener('click', async () => {
+            const file = videoInput.files[0];
+            if (!file) return;
+
+            loadingOverlay.classList.remove('hidden');
+            processBtn.disabled = true;
+            errorBox.classList.add('hidden');
+            progressBar.style.width = '5%';
+
+            try {
+                loadingText.innerText = "Đang quét video & phân tích ngữ cảnh...";
+                const reader = new FileReader();
+                const base64 = await new Promise(r => {
+                    reader.onload = () => r(reader.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+
+                // 1. Dịch thuật & Phân loại nội dung
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                const prompt = `BẠN LÀ CHUYÊN GIA DỊCH THUẬT VIDEO CAO CẤP.
+                NHIỆM VỤ:
+                1. PHÂN LOẠI: 
+                   - DỊCH: Lời thoại, bình luận, hướng dẫn bằng chữ quan trọng.
+                   - GIỮ NGUYÊN: Tên riêng người dùng, mã ID, tên vũ khí (ví dụ AK-47, M4A1, Desert Eagle), hoặc các thông số máy móc không mang nghĩa chỉ dẫn.
+                2. CHẤT LƯỢNG DỊCH: Dịch thoát ý sang tiếng Việt bản địa chuẩn xác. Nếu là video game Đột Kích/CF: Map Black Widow -> Trạm Phát Sóng, Port -> Cảng Hải Quân, Site A/B -> Khu A/B.
+                3. ĐỒNG BỘ: Câu dịch phải súc tích để đọc kịp trong mốc start_s và end_s.
+                4. PHÂN TÍCH TIẾNG NÓI: has_speech = true nếu có tiếng người đang nói thoại thực sự.
+                TRẢ VỀ JSON: { "has_speech": boolean, "segments": [{ "start_s": number, "end_s": number, "text": string }] }`;
+                
+                const res = await fetchGemini(url, {
+                    contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: file.type, data: base64 } }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+
+                const candidateText = res?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!candidateText) throw new Error("AI không thể đọc dữ liệu video (Có thể do bản quyền hoặc định dạng lỗi).");
+
+                const data = JSON.parse(cleanJsonResponse(candidateText));
+                segments = data.segments || [];
+                hasSpeech = data.has_speech || false;
+                progressBar.style.width = '35%';
+
+                renderScriptUI();
+
+                // 2. Lồng tiếng (CHỈ KHI CÓ TIẾNG NÓI)
+                if (hasSpeech && segments.length > 0) {
+                    loadingText.innerText = "Đang lồng tiếng khớp nhịp nhanh chậm...";
+                    for (let i = 0; i < segments.length; i++) {
+                        const s = segments[i];
+                        const dur = (s.end_s - s.start_s).toFixed(1);
+                        loadingText.innerText = `Đang lồng tiếng: ${i+1}/${segments.length} (${dur}s)`;
+                        
+                        const ttsUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                        const ttsRes = await fetchGemini(ttsUrl, {
+                            contents: [{ parts: [{ text: `Đọc đoạn này bằng tiếng Việt chuẩn trong ĐÚNG ${dur} giây: ${s.text}` }] }],
+                            generationConfig: {
+                                responseModalities: ["AUDIO"],
+                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } }
+                            },
+                            model: "gemini-2.5-flash-preview-tts"
+                        });
+
+                        const audioData = ttsRes?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                        if (audioData) segmentAudios[i] = pcmToWav(audioData, 24000);
+                        progressBar.style.width = `${35 + (65 * (i+1)/segments.length)}%`;
+                    }
+                } else {
+                    loadingText.innerText = "Video không có lời thoại. Đã trích xuất phụ đề!";
+                    progressBar.style.width = '100%';
+                    await new Promise(r => setTimeout(r, 600));
+                }
+
+                actionBtns.classList.remove('hidden');
+                loadingOverlay.classList.add('hidden');
+                document.getElementById('summary-btn').disabled = false;
+                document.getElementById('social-btn').disabled = false;
+            } catch (err) {
+                showError("LỖI XỬ LÝ: " + err.message.toUpperCase());
+            }
+        });
+
+        function renderScriptUI() {
+            scriptContainer.innerHTML = segments.map((s, i) => `
+                <div id="seg-${i}" class="p-5 rounded-3xl transition-all border border-transparent bg-slate-900/40 opacity-50">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-black text-blue-500 italic bg-blue-500/10 px-2 py-1 rounded-lg font-mono">${s.start_s.toFixed(1)}s - ${s.end_s.toFixed(1)}s</span>
+                        ${hasSpeech && segmentAudios[i] ? '<i data-lucide="volume-2" class="w-3 h-3 text-emerald-500 animate-pulse"></i>' : ''}
+                    </div>
+                    <p class="text-sm text-slate-200 font-medium leading-relaxed">${s.text}</p>
+                </div>
+            `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function pcmToWav(base64, rate) {
+            const bin = atob(base64);
+            const buf = new ArrayBuffer(44 + bin.length);
+            const v = new DataView(buf);
+            const s = (o, str) => { for (let i=0; i<str.length; i++) v.setUint8(o+i, str.charCodeAt(i)); };
+            s(0, 'RIFF'); v.setUint32(4, 36 + bin.length, true);
+            s(8, 'WAVE'); s(12, 'fmt '); v.setUint32(16, 16, true);
+            v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+            v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+            s(36, 'data'); v.setUint32(40, bin.length, true);
+            for (let i = 0; i < bin.length; i++) v.setUint8(44 + i, bin.charCodeAt(i));
+            return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+        }
+
+        mainVideo.addEventListener('timeupdate', () => {
+            const time = mainVideo.currentTime;
+            const idx = segments.findIndex(s => time >= s.start_s && time <= s.end_s);
+
+            if (idx !== -1) {
+                subtitleOverlay.classList.remove('hidden');
+                subtitleText.innerText = segments[idx].text;
+                
+                document.querySelectorAll('[id^="seg-"]').forEach(el => el.classList.remove('active-segment'));
+                const el = document.getElementById(`seg-${idx}`);
+                if (el) el.classList.add('active-segment');
+
+                if (hasSpeech && lastPlayedIdx !== idx) {
+                    lastPlayedIdx = idx;
+                    const url = segmentAudios[idx];
+                    if (url) {
+                        activeAudios.forEach(a => { a.pause(); a.currentTime = 0; });
+                        const audio = new Audio(url);
+                        const dur = segments[idx].end_s - segments[idx].start_s;
+                        audio.addEventListener('loadedmetadata', () => {
+                            // ÉP TỐC ĐỘ PHÁT ĐỂ KHỚP NHỊP: Giới hạn lên đến 2.5x để nói kịp video
+                            if (audio.duration > dur && dur > 0) {
+                                audio.playbackRate = Math.min(audio.duration / dur, 2.5);
+                            }
+                        });
+                        audio.play().catch(() => {});
+                        activeAudios = [audio];
+                        mainVideo.volume = 0.15; // Nhỏ tiếng gốc
+                        audio.onended = () => { if (lastPlayedIdx === idx) mainVideo.volume = 0.6; };
+                    }
+                }
+            } else {
+                subtitleOverlay.classList.add('hidden');
+                if (mainVideo.volume < 0.5) mainVideo.volume = 0.6;
+            }
+        });
+
+        document.getElementById('play-btn').addEventListener('click', () => {
+            lastPlayedIdx = -1;
+            mainVideo.currentTime = 0;
+            mainVideo.play();
+        });
+
+        document.getElementById('download-btn').addEventListener('click', async () => {
+            isRecording = true;
+            document.getElementById('recording-badge').classList.remove('hidden');
+            const chunks = [];
+            
+            if (!currentAudioCtx) currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const dest = currentAudioCtx.createMediaStreamDestination();
+            const source = currentAudioCtx.createMediaElementSource(mainVideo);
+            const gain = currentAudioCtx.createGain();
+            
+            gain.gain.value = hasSpeech ? 0.2 : 1.0;
+            source.connect(gain).connect(dest);
+            gain.connect(currentAudioCtx.destination);
+
+            const stream = mainVideo.captureStream ? mainVideo.captureStream() : mainVideo.mozCaptureStream();
+            const combined = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+            const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9' });
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `video_ai_master_${Date.now()}.webm`;
+                a.click();
+                isRecording = false;
+                document.getElementById('recording-badge').classList.add('hidden');
+                currentAudioCtx.close().then(() => currentAudioCtx = null);
+            };
+
+            recorder.start();
+            document.getElementById('play-btn').click();
+            mainVideo.onended = () => { if(recorder.state === 'recording') recorder.stop(); };
+        });
+
+        async function handleAIService(type) {
+            if (segments.length === 0) return;
+            const resBox = document.getElementById('ai-lab-result');
+            const resText = document.getElementById('result-text');
+            const resTitle = document.getElementById('result-title');
+            
+            resBox.classList.remove('hidden');
+            resTitle.innerText = "AI ĐANG PHÂN TÍCH... ✨";
+            resText.innerText = "Đang xử lý kịch bản chọn lọc của bạn...";
+
+            try {
+                const fullText = segments.map(s => s.text).join(" ");
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const prompt = type === 'summary' 
+                    ? `Hãy tóm tắt nội dung chính video này bằng tiếng Việt súc tích: "${fullText}"`
+                    : `Dựa trên kịch bản video: "${fullText}", hãy tạo 3 tiêu đề viral "giật tít" và mô tả chuẩn TikTok/Youtube kèm hashtags.`;
+
+                const res = await fetchGemini(url, { contents: [{ parts: [{ text: prompt }] }] });
+                resTitle.innerText = type === 'summary' ? "Tóm tắt video ✨" : "Chiến lược Social ✨";
+                resText.innerText = res.candidates?.[0]?.content?.parts?.[0]?.text || "AI không phản hồi.";
+            } catch (e) {
+                resText.innerText = "LỖI AI: " + e.message;
+            }
+        }
+
+        function copyToClipboard() {
+            const txt = document.getElementById('result-text').innerText;
+            if (!txt) return;
+            navigator.clipboard.writeText(txt).then(() => {
+                const b = document.createElement('div');
+                b.className = "fixed bottom-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full text-xs font-bold shadow-2xl animate-bounce z-[100]";
+                b.innerText = "Đã sao chép!";
+                document.body.appendChild(b);
+                setTimeout(() => b.remove(), 2000);
+            });
+        }
+
+        function switchTab(tab) {
+            document.getElementById('script-panel').classList.toggle('hidden', tab !== 'script');
+            document.getElementById('ai-lab-panel').classList.toggle('hidden', tab !== 'ai-lab');
+            document.getElementById('tab-script').className = tab === 'script' ? 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg' : 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200';
+            document.getElementById('tab-ai-lab').className = tab === 'ai-lab' ? 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg' : 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200';
+        }
+    </script>
+</body>
+</html>
