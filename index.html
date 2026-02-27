@@ -863,21 +863,42 @@ async function doExport(){
   }
   S.audioCtx=null; S.srcNode=null;
 
+  // Đảm bảo video ở trạng thái sạch sẽ
+  D.vid.pause();
+  D.vid.currentTime=0;
+  D.vid.volume=1.0;
+  D.vid.muted=false;
+
+  // --- Tạo Canvas để vẽ Hardsub ---
+  var canvas = document.createElement('canvas');
+  canvas.width = D.vid.videoWidth;
+  canvas.height = D.vid.videoHeight;
+  var ctx = canvas.getContext('2d');
+  // Font chữ cho phụ đề (tỉ lệ theo chiều cao video)
+  var fontSize = Math.max(16, canvas.height * 0.045); 
+
   var chunks=[], rec, exportCtx=null;
 
   try{
     // Tạo AudioContext mới cho export
     exportCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(exportCtx.state==='suspended') await exportCtx.resume();
+
     var dest=exportCtx.createMediaStreamDestination();
 
-    // --- Kết nối tiếng gốc của video ---
-    var vidSrc=exportCtx.createMediaElementSource(D.vid);
-    var vidGain=exportCtx.createGain();
-    // Nếu có TTS thì giảm tiếng gốc xuống 20%, không có TTS thì giữ 100%
-    vidGain.gain.value=S.hasSpeech&&Object.keys(S.wavs).length>0?0.2:1.0;
-    vidSrc.connect(vidGain);
-    vidGain.connect(dest);
-    vidGain.connect(exportCtx.destination); // để monitor
+    // --- Lấy stream từ video (hình ảnh + tiếng gốc) ---
+    var vidCap=D.vid.captureStream?D.vid.captureStream():D.vid.mozCaptureStream();
+    
+    // --- Xử lý Audio gốc: Lấy từ stream thay vì createMediaElementSource để tránh lỗi ---
+    // Chỉ xử lý nếu video gốc có track audio
+    if(vidCap.getAudioTracks().length>0){
+      var vidStreamSrc=exportCtx.createMediaStreamSource(vidCap);
+      var vidGain=exportCtx.createGain();
+      // Nếu có TTS thì giảm tiếng gốc xuống 20%, không có TTS thì giữ 100%
+      vidGain.gain.value=S.hasSpeech&&Object.keys(S.wavs).length>0?0.2:1.0;
+      vidStreamSrc.connect(vidGain);
+      vidGain.connect(dest);
+    }
 
     // --- Pre-decode tất cả WAV files ---
     var decodedBuffers={};
@@ -894,8 +915,9 @@ async function doExport(){
     }
 
     // --- Bắt đầu record ---
-    var cap=D.vid.captureStream?D.vid.captureStream():D.vid.mozCaptureStream();
-    var ms=new MediaStream([...cap.getVideoTracks(),...dest.stream.getAudioTracks()]);
+    // Lấy video từ CANVAS (đã có sub) và Audio từ DESTINATION (đã mix)
+    var canvasStream = canvas.captureStream(30); // 30 FPS
+    var ms=new MediaStream([...canvasStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
 
     rec=new MediaRecorder(ms,{mimeType:mime});
     rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
@@ -914,20 +936,69 @@ async function doExport(){
       S.audioCtx=null; S.srcNode=null;
     };
 
-    // --- Reset video về đầu ---
-    D.vid.currentTime=0;
-    S.lastIdx=-1; S.curAudio=null;
-    D.vid.volume=1.0;
-
     rec.start(100);
 
     // --- Play video ---
     await D.vid.play();
 
+    // --- Vòng lặp vẽ Canvas (Hardsub) ---
+    var drawLoop = function(){
+      if(!S.recording) return;
+      
+      // 1. Vẽ frame video gốc
+      ctx.drawImage(D.vid, 0, 0, canvas.width, canvas.height);
+
+      // 2. Tìm và vẽ phụ đề
+      var t = D.vid.currentTime;
+      var seg = S.segs.find(function(s){ return t>=s.start_s && t<=s.end_s; });
+      
+      if(seg && seg.text){
+        ctx.font = "bold " + fontSize + "px Manrope, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.lineJoin = "round";
+        
+        var text = seg.text;
+        var maxWidth = canvas.width * 0.9;
+        var x = canvas.width / 2;
+        var y = canvas.height - (fontSize * 1.5);
+
+        // Xử lý xuống dòng (Word wrap)
+        var words = text.split(' ');
+        var line = '';
+        var lines = [];
+        for(var n = 0; n < words.length; n++) {
+          var testLine = line + words[n] + ' ';
+          var metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && n > 0) {
+            lines.push(line);
+            line = words[n] + ' ';
+          } else {
+            line = testLine;
+          }
+        }
+        lines.push(line);
+
+        // Vẽ từng dòng (Stroke đen + Fill trắng)
+        lines.forEach(function(l, i){
+          // Vẽ ngược từ dưới lên
+          var ly = y - ((lines.length - 1 - i) * (fontSize * 1.2));
+          ctx.lineWidth = fontSize * 0.15; // Viền đen dày
+          ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+          ctx.strokeText(l, x, ly);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(l, x, ly);
+        });
+      }
+      
+      requestAnimationFrame(drawLoop);
+    };
+    drawLoop();
+
     // --- Schedule TTS buffers theo đúng timestamp ---
     if(S.hasSpeech&&Object.keys(decodedBuffers).length>0){
-      var ctxStartTime=exportCtx.currentTime;
-      var vidStartTime=D.vid.currentTime; // ~0
+      // Lấy mốc thời gian hiện tại của AudioContext làm chuẩn
+      var startTime=exportCtx.currentTime;
 
       Object.keys(decodedBuffers).forEach(function(idxStr){
         var idx=parseInt(idxStr);
@@ -945,14 +1016,14 @@ async function doExport(){
         }
 
         var ttsGain=exportCtx.createGain();
-        ttsGain.gain.value=1.0;
+        ttsGain.gain.value=1.0; // Max volume cho TTS
         ttsNode.connect(ttsGain);
         ttsGain.connect(dest);
-        ttsGain.connect(exportCtx.destination);
 
         // Schedule tại đúng thời điểm trong video
-        var startAt=ctxStartTime+(seg.start_s-vidStartTime);
-        ttsNode.start(Math.max(startAt, exportCtx.currentTime+0.05));
+        // Cộng thêm một chút delay nhỏ (0.05s) để tránh bị cắt đầu nếu start_s=0
+        var startAt=startTime+seg.start_s;
+        ttsNode.start(startAt);
       });
     }
 
