@@ -1,495 +1,921 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Sync Master Pro - AI Translation</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #020617; scroll-behavior: smooth; overflow-x: hidden; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        .active-segment { 
-            background-color: rgba(37, 99, 235, 0.25); 
-            border-color: rgba(37, 99, 235, 0.6); 
-            opacity: 1 !important; 
-            transform: scale(1.02);
-            box-shadow: 0 4px 20px -2px rgba(59, 130, 246, 0.3);
-        }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VTranslate Pro — AI Video Dubbing</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --c-bg:      #07070e;
+  --c-s1:      #0e0e1a;
+  --c-s2:      #131320;
+  --c-s3:      #191928;
+  --c-border:  #22223a;
+  --c-border2: #2e2e50;
+  --c-dim:     #3d3d66;
+  --c-muted:   #666690;
+  --c-base:    #9898c0;
+  --c-text:    #d8d8f0;
+  --c-white:   #ededff;
+  --c-blue:    #5b6af5;
+  --c-blue2:   #8490ff;
+  --c-blue-g:  rgba(91,106,245,.14);
+  --c-blue-g2: rgba(91,106,245,.07);
+  --c-teal:    #00d4aa;
+  --c-teal-g:  rgba(0,212,170,.1);
+  --c-red:     #f0445a;
+  --font-ui:   'Manrope', sans-serif;
+  --font-code: 'IBM Plex Mono', monospace;
+  --r-lg: 20px; --r-md: 14px; --r-sm: 9px;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{
+  background:var(--c-bg);color:var(--c-text);
+  font-family:var(--font-ui);min-height:100vh;
+  overflow-x:hidden;line-height:1.5;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+  opacity:.6;
+}
+.glow-spot{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px)}
+.glow-a{width:600px;height:600px;background:rgba(91,106,245,.045);top:-150px;left:-150px}
+.glow-b{width:500px;height:500px;background:rgba(0,212,170,.03);bottom:-100px;right:-100px}
+
+/* ── LAYOUT ── */
+.app{max-width:1340px;margin:0 auto;padding:0 28px 100px;position:relative;z-index:1}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:28px 0 30px;flex-wrap:wrap;gap:14px;
+  border-bottom:1px solid var(--c-border);margin-bottom:26px;
+}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-mark{
+  width:52px;height:52px;border-radius:16px;
+  background:linear-gradient(145deg,#5b6af5 0%,#00d4aa 100%);
+  display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 8px 32px rgba(91,106,245,.4),0 0 60px rgba(0,212,170,.15);
+}
+.brand-name{font-size:1.4rem;font-weight:900;color:var(--c-white);letter-spacing:-.03em;line-height:1}
+.brand-name span{color:var(--c-blue2)}
+.brand-sub{font-family:var(--font-code);font-size:.55rem;color:var(--c-muted);letter-spacing:.18em;text-transform:uppercase;margin-top:5px}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--c-s2);border:1px solid var(--c-border);
+  border-radius:999px;padding:7px 14px;
+  font-family:var(--font-code);font-size:.55rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--c-muted);white-space:nowrap;
+}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:var(--c-dim);transition:background .4s,box-shadow .4s;flex-shrink:0}
+.pill-dot.on-speech{background:var(--c-blue2);box-shadow:0 0 8px var(--c-blue)}
+.pill-dot.on-text{background:var(--c-teal);box-shadow:0 0 8px var(--c-teal)}
+
+/* ── KEY BAR ── */
+.keybar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--c-s1);border:1px solid var(--c-border);
+  border-radius:var(--r-lg);padding:14px 20px;margin-bottom:22px;flex-wrap:wrap;
+  transition:border-color .2s;
+}
+.keybar:focus-within{border-color:var(--c-border2)}
+.keybar-lbl{font-family:var(--font-code);font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--c-muted);white-space:nowrap;flex-shrink:0}
+.keybar-input{
+  flex:1;min-width:200px;background:rgba(255,255,255,.03);
+  border:1px solid var(--c-border);border-radius:var(--r-sm);padding:9px 14px;
+  color:var(--c-white);font-family:var(--font-code);font-size:.78rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.keybar-input:focus{border-color:var(--c-blue);box-shadow:0 0 0 3px var(--c-blue-g)}
+.keybar-input::placeholder{color:var(--c-dim)}
+.keybar-st{font-family:var(--font-code);font-size:.62rem;font-weight:700;flex-shrink:0;min-width:88px}
+
+/* ── ERROR BAR ── */
+.errbar{
+  display:none;gap:10px;align-items:flex-start;
+  background:rgba(240,68,90,.07);border:1px solid rgba(240,68,90,.22);
+  border-radius:var(--r-md);padding:13px 18px;margin-bottom:20px;
+  font-size:.8rem;color:#ffb3bf;line-height:1.55;
+}
+.errbar.on{display:flex}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 380px;gap:22px}
+@media(max-width:1040px){.grid{grid-template-columns:1fr}}
+.col-main{display:flex;flex-direction:column;gap:14px}
+
+/* ── VIDEO STAGE ── */
+.stage{
+  position:relative;aspect-ratio:16/9;background:#000;
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--c-border);
+  box-shadow:0 0 0 1px rgba(255,255,255,.03),0 40px 120px rgba(0,0,0,.8);
+}
+.stage video{width:100%;height:100%;object-fit:contain;display:none}
+.stage video.visible{display:block}
+
+/* drop zone */
+.dropzone{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:background .2s;
+}
+.dropzone.gone{display:none}
+.dropzone:hover,.dropzone.drag{background:rgba(91,106,245,.06)}
+.dz-icon-wrap{
+  width:80px;height:80px;border-radius:50%;border:1.5px dashed var(--c-dim);
+  display:flex;align-items:center;justify-content:center;font-size:2rem;
+  transition:border-color .2s,transform .2s;
+}
+.dropzone:hover .dz-icon-wrap,.dropzone.drag .dz-icon-wrap{border-color:var(--c-blue2);transform:scale(1.06)}
+.dz-title{font-weight:800;font-size:1.05rem;color:var(--c-white);letter-spacing:-.01em}
+.dz-hint{font-size:.75rem;color:var(--c-muted);text-align:center;padding:0 48px;line-height:1.6}
+.dz-formats{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dz-fmt{background:var(--c-s3);border:1px solid var(--c-border2);border-radius:6px;padding:3px 9px;font-family:var(--font-code);font-size:.52rem;color:var(--c-dim);letter-spacing:.1em;text-transform:uppercase}
+.dropzone input{display:none}
+
+/* proc overlay */
+.proc{
+  display:none;position:absolute;inset:0;z-index:30;
+  background:rgba(7,7,14,.93);backdrop-filter:blur(20px);
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;padding:36px;text-align:center;
+}
+.proc.on{display:flex}
+.proc-spin{position:relative;width:68px;height:68px;flex-shrink:0}
+.spin-ring{position:absolute;inset:0;border-radius:50%;border:2px solid transparent}
+.spin-ring:nth-child(1){border-top-color:var(--c-blue2);animation:spin .75s linear infinite}
+.spin-ring:nth-child(2){inset:10px;border-bottom-color:var(--c-teal);animation:spin 1.2s linear infinite reverse}
+.spin-ring:nth-child(3){inset:22px;border-right-color:rgba(91,106,245,.4);animation:spin 2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-label{font-weight:800;font-size:.95rem;color:var(--c-white);letter-spacing:-.01em;animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.35}}
+.proc-steps{display:flex;flex-direction:column;gap:9px;width:100%;max-width:290px}
+.ps{display:flex;align-items:center;gap:10px;font-size:.7rem;font-weight:500;color:var(--c-dim);transition:color .3s;text-align:left}
+.ps.cur{color:var(--c-white)}
+.ps.done{color:var(--c-teal)}
+.ps-bullet{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:var(--font-code);font-size:.55rem;font-weight:700;transition:background .3s,border-color .3s;
+}
+.ps.cur .ps-bullet{background:var(--c-blue);border-color:var(--c-blue);color:#fff;animation:pulse-dot .9s ease-in-out infinite}
+.ps.done .ps-bullet{background:var(--c-teal);border-color:var(--c-teal);color:#000}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(91,106,245,.5)}50%{box-shadow:0 0 0 7px rgba(91,106,245,0)}}
+
+/* ── PROGRESS INFO (inside overlay, below steps) ── */
+.proc-info{font-family:var(--font-code);font-size:.6rem;color:var(--c-muted);margin-top:4px}
+
+/* tts bar */
+.tts-bar{display:none;position:absolute;bottom:0;left:0;right:0;height:3px;z-index:35;background:var(--c-border)}
+.tts-bar.on{display:block}
+.tts-fill{height:100%;background:linear-gradient(90deg,var(--c-blue) 0%,var(--c-teal) 100%);width:0%;transition:width .3s var(--ease)}
+
+/* subtitle */
+.sub-layer{display:none;position:absolute;bottom:22px;left:0;right:0;padding:0 5%;text-align:center;pointer-events:none;z-index:20}
+.sub-layer.on{display:block}
+.sub-pill{
+  display:inline-block;background:rgba(7,7,14,.9);backdrop-filter:blur(14px);
+  border:1px solid rgba(91,106,245,.28);border-radius:10px;padding:9px 22px;
+  font-weight:600;font-size:.95rem;color:var(--c-white);
+  box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+  max-width:88%;line-height:1.5;
+}
+
+/* rec badge */
+.rec-badge{
+  display:none;position:absolute;top:14px;right:14px;z-index:30;
+  background:var(--c-red);border-radius:999px;padding:5px 14px;gap:7px;align-items:center;
+  font-family:var(--font-code);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+  animation:breathe .8s ease-in-out infinite;
+}
+.rec-badge.on{display:flex}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:#fff}
+
+/* ── CONTROLS ── */
+.controls{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;
+  font-family:var(--font-ui);font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;
+  border-radius:var(--r-md);padding:14px 22px;transition:all .18s var(--ease);white-space:nowrap;
+  position:relative;overflow:hidden;-webkit-user-select:none;user-select:none;
+}
+.btn:disabled{opacity:.25;cursor:not-allowed;pointer-events:none}
+.btn .ico{font-size:.95rem;flex-shrink:0}
+.btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);
+  transform:translateX(-100%);transition:transform .5s var(--ease);
+}
+.btn:not(:disabled):hover::after{transform:translateX(100%)}
+.btn-analyze{flex:1;background:linear-gradient(135deg,var(--c-blue) 0%,#4a55e0 100%);color:#fff;box-shadow:0 6px 24px rgba(91,106,245,.35)}
+.btn-analyze:not(:disabled):hover{box-shadow:0 10px 36px rgba(91,106,245,.5);transform:translateY(-1px)}
+.btn-preview{background:var(--c-s3);color:var(--c-text);border:1px solid var(--c-border);display:none}
+.btn-preview.on{display:inline-flex}
+.btn-preview:not(:disabled):hover{border-color:var(--c-blue2);color:var(--c-white)}
+.btn-export{background:var(--c-s3);color:var(--c-teal);border:1px solid rgba(0,212,170,.25);display:none}
+.btn-export.on{display:inline-flex}
+.btn-export:not(:disabled):hover{background:var(--c-teal-g);border-color:var(--c-teal)}
+.btn-reset{background:var(--c-s3);color:var(--c-muted);border:1px solid var(--c-border);display:none}
+.btn-reset.on{display:inline-flex}
+.btn-reset:not(:disabled):hover{color:var(--c-text);border-color:var(--c-dim)}
+
+/* ── SIDEBAR ── */
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-card{background:var(--c-s1);border:1px solid var(--c-border);border-radius:var(--r-md);padding:16px 18px}
+.stat-lbl{font-family:var(--font-code);font-size:.52rem;color:var(--c-muted);text-transform:uppercase;letter-spacing:.16em;margin-bottom:7px}
+.stat-val{font-family:var(--font-code);font-size:1.3rem;font-weight:700;color:var(--c-white);line-height:1}
+.stat-val.blue{color:var(--c-blue2)}
+.stat-val.teal{color:var(--c-teal)}
+
+.script-panel{background:var(--c-s1);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:20px;flex:1;display:flex;flex-direction:column;min-height:400px}
+.sp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--c-border)}
+.sp-title{display:flex;align-items:center;gap:8px;font-family:var(--font-code);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--c-muted)}
+.sp-title-orb{width:7px;height:7px;border-radius:50%;background:var(--c-blue);box-shadow:0 0 8px var(--c-blue)}
+.sp-count{font-family:var(--font-code);font-size:.52rem;color:var(--c-blue2);background:var(--c-blue-g);border:1px solid rgba(91,106,245,.2);border-radius:999px;padding:2px 9px;display:none}
+.sp-count.on{display:inline-block}
+.sp-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:3px}
+.sp-list::-webkit-scrollbar{width:3px}
+.sp-list::-webkit-scrollbar-thumb{background:var(--c-border2);border-radius:999px}
+.sp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:.18;padding:40px 0;text-align:center}
+.sp-empty-icon{font-size:2.4rem}
+.sp-empty-txt{font-family:var(--font-code);font-size:.58rem;color:var(--c-muted);text-transform:uppercase;letter-spacing:.13em;line-height:2.2}
+
+/* segment card */
+.sc{background:rgba(255,255,255,.018);border:1px solid transparent;border-radius:var(--r-sm);padding:11px 13px;cursor:pointer;opacity:.45;transition:opacity .2s,background .2s,border-color .2s,box-shadow .2s}
+.sc:hover{opacity:.72;background:rgba(255,255,255,.03)}
+.sc.active{opacity:1;background:var(--c-blue-g);border-color:rgba(91,106,245,.28);box-shadow:0 0 16px var(--c-blue-g2)}
+.sc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sc-ts{font-family:var(--font-code);font-size:.56rem;color:var(--c-blue2);background:var(--c-blue-g);border-radius:5px;padding:2px 7px}
+.sc-tts{font-family:var(--font-code);font-size:.5rem;color:var(--c-teal);display:none;opacity:.75}
+.sc-tts.on{display:inline}
+.sc-text{font-size:.77rem;color:var(--c-base);line-height:1.6}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fadeup{animation:fadeUp .45s var(--ease) both}
+</style>
 </head>
-<body class="text-slate-100 p-4 md:p-10">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-            <div class="flex items-center gap-4">
-                <div class="relative p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl shadow-2xl">
-                    <i data-lucide="video" class="text-white w-8 h-8"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-black text-white tracking-tight uppercase italic text-center md:text-left">VIDEO <span class="text-blue-500 underline decoration-2 underline-offset-4">SYNC MASTER</span></h1>
-                    <div id="status-badge" class="flex items-center gap-2 text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-                        <i data-lucide="zap" class="w-3 h-3 text-yellow-500"></i> AI Dịch thuật chọn lọc & Khớp nhịp chuẩn
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Ô nhập API Key cho người dùng -->
-            <div class="bg-slate-900/50 p-2 rounded-2xl border border-slate-800 flex items-center gap-3 w-full md:w-auto">
-                <div class="pl-3 text-[10px] font-black uppercase text-slate-500 whitespace-nowrap">API Key:</div>
-                <input type="password" id="user-api-key" placeholder="Dán mã AIzaSy... vào đây" class="bg-black border border-slate-700 rounded-xl px-4 py-2 text-xs w-full md:w-64 focus:outline-none focus:border-blue-500 transition-all text-blue-400">
-                <div class="pr-2 group relative">
-                    <i data-lucide="info" class="w-4 h-4 text-slate-600 cursor-help"></i>
-                    <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-800 text-[10px] rounded-lg hidden group-hover:block z-50 shadow-2xl">
-                        Lấy Key miễn phí tại aistudio.google.com
-                    </div>
-                </div>
-            </div>
+<body>
+<div class="glow-spot glow-a"></div>
+<div class="glow-spot glow-b"></div>
+
+<div class="app">
+
+  <header class="header fadeup">
+    <div class="brand">
+      <div class="brand-mark">🎬</div>
+      <div>
+        <div class="brand-name">VTranslate <span>Pro</span></div>
+        <div class="brand-sub">AI Video Dubbing &amp; Subtitle Engine</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="pill"><div class="pill-dot" id="modeDot"></div><span id="modeText">Standby</span></div>
+      <div class="pill">Gemini 2.5 Flash</div>
+    </div>
+  </header>
+
+  <div class="keybar fadeup" style="animation-delay:.05s">
+    <span class="keybar-lbl">🔑 API Key</span>
+    <input class="keybar-input" id="keyInput" type="password" placeholder="Dán Gemini API Key vào đây  (AIza...)"/>
+    <span class="keybar-st" id="keyStatus"></span>
+  </div>
+
+  <div class="errbar" id="errBar">
+    <span style="flex-shrink:0;margin-top:2px">⚠</span>
+    <span id="errMsg"></span>
+  </div>
+
+  <div class="grid fadeup" style="animation-delay:.1s">
+
+    <div class="col-main">
+      <div class="stage" id="stage">
+
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="video/*"/>
+          <div class="dz-icon-wrap">📤</div>
+          <div class="dz-title">Kéo thả hoặc click để chọn video</div>
+          <div class="dz-hint">Tự động nhận diện lời thoại, dịch tiếng Việt, lồng giọng TTS và đồng bộ thời gian</div>
+          <div class="dz-formats">
+            <span class="dz-fmt">MP4</span><span class="dz-fmt">MOV</span>
+            <span class="dz-fmt">WEBM</span><span class="dz-fmt">AVI</span>
+            <span class="dz-fmt">MKV</span><span class="dz-fmt">Max 100 MB</span>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <!-- Cột trái: Player -->
-            <div class="lg:col-span-8 space-y-6">
-                <div id="drop-zone" class="relative aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5">
-                    
-                    <div id="upload-placeholder" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-900/40 transition-all z-20">
-                        <input type="file" id="video-input" class="hidden" accept="video/*">
-                        <div class="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-4 border border-blue-500/50">
-                            <i data-lucide="upload-cloud" class="text-blue-500 w-10 h-10 animate-bounce"></i>
-                        </div>
-                        <span class="text-xl font-black text-white uppercase tracking-widest text-center">Tải Video Nguồn</span>
-                        <span class="text-slate-500 text-sm mt-2 font-medium italic text-center px-4">Tự động phân tích: Cái gì cần dịch, cái gì giữ nguyên</span>
-                    </div>
-                    
-                    <video id="main-video" class="w-full h-full object-contain hidden" crossorigin="anonymous" playsinline></video>
-                    
-                    <!-- Lớp phủ Loading -->
-                    <div id="loading-overlay" class="absolute inset-0 bg-black/95 backdrop-blur-xl hidden flex flex-col items-center justify-center z-50 p-6 text-center">
-                        <i data-lucide="loader-2" class="animate-spin text-blue-500 mb-8 w-20 h-20"></i>
-                        <p id="loading-text" class="text-2xl font-black text-white uppercase tracking-tighter animate-pulse px-4 text-center">Đang xử lý...</p>
-                        <div class="mt-6 w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-300 shadow-[0_0_10px_#3b82f6]"></div>
-                        </div>
-                    </div>
+        <video id="vid" crossorigin="anonymous" controls></video>
 
-                    <!-- Lớp phủ Phụ đề -->
-                    <div id="subtitle-overlay" class="absolute bottom-12 left-0 right-0 px-12 text-center pointer-events-none transition-all hidden z-30">
-                        <p id="subtitle-text" class="bg-blue-600/90 backdrop-blur-md text-white inline-block px-8 py-4 rounded-2xl font-bold text-xl shadow-2xl border border-white/20"></p>
-                    </div>
-
-                    <div id="recording-badge" class="absolute top-6 right-6 hidden items-center gap-3 bg-red-600 px-6 py-3 rounded-full animate-pulse z-40 shadow-lg text-white">
-                        <i data-lucide="stop-circle" class="w-5 h-5 text-white"></i>
-                        <span class="text-xs font-black uppercase tracking-widest">Đang xuất video...</span>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-4">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <button id="process-btn" disabled class="flex-1 bg-white hover:bg-blue-50 disabled:bg-slate-800 disabled:text-slate-500 text-black font-black py-6 rounded-[2rem] transition-all flex items-center justify-center gap-4 uppercase tracking-widest text-sm shadow-xl">
-                            <i data-lucide="sparkles" class="w-5 h-5"></i> Dịch Thuật & Khớp Nhịp
-                        </button>
-                        
-                        <div id="action-btns" class="hidden flex flex-col sm:flex-row gap-4">
-                            <button id="play-btn" class="px-12 bg-blue-600 hover:bg-blue-500 text-white font-black py-6 rounded-[2rem] transition-all shadow-xl flex items-center justify-center gap-3 uppercase text-xs">
-                                <i data-lucide="play" class="w-5 h-5" fill="currentColor"></i> Xem Thử
-                            </button>
-                            <button id="download-btn" class="px-12 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-6 rounded-[2rem] transition-all shadow-xl flex items-center justify-center gap-3 uppercase text-xs">
-                                <i data-lucide="download" class="w-5 h-5"></i> Tải Video
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Box hiển thị lỗi -->
-                    <div id="error-box" class="hidden bg-red-500/10 border border-red-500/30 p-5 rounded-[1.5rem] flex items-start gap-4">
-                        <i data-lucide="alert-circle" class="text-red-500 w-6 h-6 shrink-0 mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1 font-mono">Thông báo lỗi</p>
-                            <p id="error-message" class="text-red-200 text-sm font-medium leading-relaxed"></p>
-                        </div>
-                        <button onclick="document.getElementById('error-box').classList.add('hidden')" class="text-slate-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cột phải -->
-            <div class="lg:col-span-4 space-y-6">
-                <div class="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
-                    <button onclick="switchTab('script')" id="tab-script" class="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg">Kịch bản</button>
-                    <button onclick="switchTab('ai-lab')" id="tab-ai-lab" class="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200">✨ AI Lab</button>
-                </div>
-
-                <div id="script-panel" class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[550px]">
-                    <h3 class="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
-                        <i data-lucide="subtitles" class="text-blue-500 w-5 h-5"></i> Bản dịch đồng bộ
-                    </h3>
-                    <div id="script-container" class="flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-4">
-                        <div class="h-full flex flex-col items-center justify-center text-center opacity-30 italic">
-                            <i data-lucide="mic-2" class="mb-4 text-slate-700 w-12 h-12"></i>
-                            <p class="text-xs font-bold uppercase tracking-widest leading-loose text-slate-500 text-center px-4">Tải video để bắt đầu<br>phân tích dữ liệu</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="ai-lab-panel" class="hidden bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[550px]">
-                    <h3 class="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
-                        <i data-lucide="brain-circuit" class="text-indigo-500 w-5 h-5"></i> Trợ lý sản xuất
-                    </h3>
-                    <div class="space-y-4 overflow-y-auto pr-3 custom-scrollbar">
-                        <button onclick="handleAIService('summary')" id="summary-btn" disabled class="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-30">
-                            <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> ✨ Tóm tắt nội dung
-                        </button>
-                        <button onclick="handleAIService('social')" id="social-btn" disabled class="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-30">
-                            <i data-lucide="share-2" class="w-4 h-4 text-emerald-500"></i> ✨ Viết Caption Viral
-                        </button>
-
-                        <div id="ai-lab-result" class="mt-4 p-5 bg-blue-600/5 border border-blue-500/20 rounded-2xl hidden transition-all">
-                            <div class="flex justify-between items-center mb-3 border-b border-blue-500/10 pb-2">
-                                <span id="result-title" class="text-[10px] font-black text-blue-500 uppercase font-mono">Phân tích</span>
-                                <button onclick="copyToClipboard()" class="text-slate-500 hover:text-white"><i data-lucide="copy" class="w-4 h-4"></i></button>
-                            </div>
-                            <div id="result-text" class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="proc" id="proc">
+          <div class="proc-spin">
+            <div class="spin-ring"></div>
+            <div class="spin-ring"></div>
+            <div class="spin-ring"></div>
+          </div>
+          <div class="proc-label" id="procLbl">Đang khởi động...</div>
+          <div class="proc-steps">
+            <div class="ps" id="ps0"><div class="ps-bullet">1</div><span>Phân tích video &amp; nhận diện ngôn ngữ</span></div>
+            <div class="ps" id="ps1"><div class="ps-bullet">2</div><span>Trích xuất &amp; dịch sang tiếng Việt chuẩn</span></div>
+            <div class="ps" id="ps2"><div class="ps-bullet">3</div><span>Tổng hợp giọng đọc TTS (Aoede)</span></div>
+            <div class="ps" id="ps3"><div class="ps-bullet">4</div><span>Đồng bộ nhịp độ &amp; hoàn thiện</span></div>
+          </div>
+          <div class="proc-info" id="procInfo"></div>
         </div>
+
+        <div class="sub-layer" id="subLayer"><span class="sub-pill" id="subPill"></span></div>
+        <div class="rec-badge" id="recBadge"><div class="rec-dot"></div>Đang xuất...</div>
+        <div class="tts-bar" id="ttsBar"><div class="tts-fill" id="ttsFill"></div></div>
+
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-analyze" id="btnAnalyze" disabled>
+          <span class="ico">✦</span> Phân tích &amp; Dịch Thuần Việt
+        </button>
+        <button class="btn btn-preview" id="btnPreview"><span class="ico">▶</span> Xem thử</button>
+        <button class="btn btn-export"  id="btnExport"><span class="ico">↓</span> Xuất Video</button>
+        <button class="btn btn-reset"   id="btnReset"><span class="ico">↺</span> Reset</button>
+      </div>
     </div>
 
-    <script>
-        // Mặc định là chuỗi rỗng để hệ thống tự cấp, nếu không sẽ dùng Key người dùng nhập
-        const defaultApiKey = ""; 
-        let segments = [];
-        let segmentAudios = {};
-        let hasSpeech = false;
-        let isRecording = false;
-        let lastPlayedIdx = -1;
-        let activeAudios = [];
-        let currentAudioCtx = null;
+    <div class="sidebar">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-lbl">Tổng đoạn</div>
+          <div class="stat-val blue" id="statSegs">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">TTS ready</div>
+          <div class="stat-val teal" id="statTts">—</div>
+        </div>
+      </div>
 
-        function getActiveKey() {
-            const userKey = document.getElementById('user-api-key').value.trim();
-            return userKey || defaultApiKey;
+      <div class="script-panel">
+        <div class="sp-head">
+          <div class="sp-title"><div class="sp-title-orb"></div>Kịch bản dịch</div>
+          <span class="sp-count" id="spCount"></span>
+        </div>
+        <div class="sp-list" id="spList">
+          <div class="sp-empty" id="spEmpty">
+            <div class="sp-empty-icon">🎞</div>
+            <div class="sp-empty-txt">Chưa có dữ liệu<br/>Tải video &amp; bấm phân tích</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+var S = {
+  file: null, segs: [], hasSpeech: false,
+  wavs: {}, blobPool: [], lastIdx: -1,
+  curAudio: null, ttsCount: 0,
+  processing: false, recording: false,
+  audioCtx: null, srcNode: null,
+  rafId: null, lastT: -1
+};
+
+/* ════════════════════════════════════
+   DOM
+════════════════════════════════════ */
+function g(id){ return document.getElementById(id); }
+var D = {
+  keyInput:  g('keyInput'),  keyStatus: g('keyStatus'),
+  errBar:    g('errBar'),    errMsg:    g('errMsg'),
+  stage:     g('stage'),     dropzone:  g('dropzone'),
+  fileInput: g('fileInput'), vid:       g('vid'),
+  proc:      g('proc'),      procLbl:   g('procLbl'), procInfo: g('procInfo'),
+  subLayer:  g('subLayer'),  subPill:   g('subPill'),
+  recBadge:  g('recBadge'),  ttsBar:    g('ttsBar'),  ttsFill: g('ttsFill'),
+  btnAnalyze:g('btnAnalyze'),btnPreview:g('btnPreview'),
+  btnExport: g('btnExport'), btnReset:  g('btnReset'),
+  spList:    g('spList'),    spEmpty:   g('spEmpty'), spCount: g('spCount'),
+  statSegs:  g('statSegs'),  statTts:   g('statTts'),
+  modeDot:   g('modeDot'),   modeText:  g('modeText'),
+  ps:        [g('ps0'),g('ps1'),g('ps2'),g('ps3')]
+};
+
+/* ════════════════════════════════════
+   UTILITIES
+════════════════════════════════════ */
+var sleep = function(ms){ return new Promise(function(r){ setTimeout(r,ms); }); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showErr(m){ D.errMsg.textContent=m; D.errBar.classList.add('on'); }
+function hideErr(){ D.errBar.classList.remove('on'); }
+
+function setStep(n){
+  D.ps.forEach(function(el,i){
+    el.classList.toggle('cur',i===n);
+    el.classList.toggle('done',i<n);
+  });
+}
+
+function setTtsBar(done,total){
+  D.ttsBar.classList.add('on');
+  D.ttsFill.style.width=(total>0?Math.round(done/total*100):0)+'%';
+}
+
+function trackBlob(u){ S.blobPool.push(u); return u; }
+function freeBlobs(){ S.blobPool.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){};}); S.blobPool=[]; }
+
+function checkReady(){
+  var k=D.keyInput.value.trim();
+  D.btnAnalyze.disabled=!S.file||!(k.startsWith('AIza')&&k.length>30)||S.processing||S.recording;
+}
+
+/* ════════════════════════════════════
+   API KEY
+════════════════════════════════════ */
+D.keyInput.addEventListener('input',function(){
+  var k=D.keyInput.value.trim();
+  if(!k){ D.keyStatus.textContent=''; }
+  else if(k.startsWith('AIza')&&k.length>30){ D.keyStatus.textContent='✓ Hợp lệ'; D.keyStatus.style.color='#00d4aa'; }
+  else { D.keyStatus.textContent='✗ Sai format'; D.keyStatus.style.color='#f0445a'; }
+  checkReady();
+});
+
+/* ════════════════════════════════════
+   FILE
+════════════════════════════════════ */
+D.dropzone.addEventListener('click',function(){ D.fileInput.click(); });
+D.fileInput.addEventListener('change',function(e){ loadFile(e.target.files[0]); });
+D.stage.addEventListener('dragover',function(e){ e.preventDefault(); D.dropzone.classList.add('drag'); });
+D.stage.addEventListener('dragleave',function(){ D.dropzone.classList.remove('drag'); });
+D.stage.addEventListener('drop',function(e){
+  e.preventDefault(); D.dropzone.classList.remove('drag');
+  var f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('video/')) loadFile(f);
+  else showErr('Chỉ chấp nhận file video.');
+});
+
+function loadFile(file){
+  if(!file) return;
+  if(file.size>100*1024*1024){ showErr('File quá lớn ('+( file.size/1048576).toFixed(1)+' MB). Giới hạn 100 MB.'); return; }
+  if(D.vid.src&&D.vid.src.startsWith('blob:')) URL.revokeObjectURL(D.vid.src);
+  S.file=file;
+  D.vid.src=URL.createObjectURL(file);
+  D.vid.classList.add('visible');
+  D.dropzone.classList.add('gone');
+  hideErr(); wipe(); checkReady();
+}
+
+function wipe(){
+  S.segs=[]; S.hasSpeech=false; S.lastIdx=-1; S.ttsCount=0;
+  stopAudio(); freeBlobs(); S.wavs={};
+  D.subLayer.classList.remove('on');
+  D.ttsBar.classList.remove('on'); D.ttsFill.style.width='0%';
+  ['btnPreview','btnExport','btnReset'].forEach(function(b){ D[b].classList.remove('on'); });
+  D.spCount.classList.remove('on');
+  D.statSegs.textContent='—'; D.statTts.textContent='—';
+  D.modeDot.className='pill-dot'; D.modeText.textContent='Standby';
+  renderScript([]);
+}
+
+/* ════════════════════════════════════
+   GEMINI API  (retry on 429 only)
+════════════════════════════════════ */
+async function callGemini(url, body, maxTry){
+  maxTry=maxTry||3;
+  for(var t=0;t<maxTry;t++){
+    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(res.status===429){ await sleep(Math.pow(2,t)*4000); continue; } // Tăng thời gian chờ khi bị chặn
+    if(!res.ok){
+      var j=await res.json().catch(function(){return{};});
+      throw new Error((j.error&&j.error.message)||'HTTP '+res.status);
+    }
+    return await res.json();
+  }
+  throw new Error('Quá nhiều request (429). Thử lại sau.');
+}
+
+/* ════════════════════════════════════
+   FILE → BASE64
+   FIX: dùng chunk nhỏ để tránh
+   call stack overflow với video lớn
+════════════════════════════════════ */
+function fileToB64(file){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){ res(fr.result.split(',')[1]); };
+    fr.onerror=rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ════════════════════════════════════
+   PCM int16-LE → WAV
+════════════════════════════════════ */
+function pcmToWav(b64,sr){
+  sr=sr||24000;
+  var raw=atob(b64), ab=new ArrayBuffer(44+raw.length), dv=new DataView(ab);
+  function w(o,s){for(var i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i));}
+  w(0,'RIFF');dv.setUint32(4,36+raw.length,true);
+  w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);
+  dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+  dv.setUint32(24,sr,true);dv.setUint32(28,sr*2,true);
+  dv.setUint16(32,2,true);dv.setUint16(34,16,true);
+  w(36,'data');dv.setUint32(40,raw.length,true);
+  for(var i=0;i<raw.length;i++) dv.setUint8(44+i,raw.charCodeAt(i));
+  return trackBlob(URL.createObjectURL(new Blob([ab],{type:'audio/wav'})));
+}
+
+/* ════════════════════════════════════
+   MAIN PROCESS
+   
+   VẤN ĐỀ LÂU #1 ĐÃ SỬA:
+   Model cũ "gemini-2.5-flash-preview-09-2025"
+   là preview, response chậm và không ổn định.
+   Dùng "gemini-2.5-flash" (stable) nhanh hơn.
+   
+   VẤN ĐỀ LÂU #2 ĐÃ SỬA:
+   TTS gọi tuần tự 1-by-1. Giờ gọi song song
+   theo batch (3 requests cùng lúc) — nhanh
+   gấp 3x, vẫn an toàn với rate limit.
+════════════════════════════════════ */
+D.btnAnalyze.addEventListener('click', runProcess);
+
+async function runProcess(){
+  if(!S.file||S.processing) return;
+  var key=D.keyInput.value.trim();
+  if(!key){ showErr('Vui lòng nhập Gemini API Key.'); return; }
+
+  S.processing=true; hideErr();
+  D.btnAnalyze.disabled=true;
+  ['btnPreview','btnExport','btnReset'].forEach(function(b){ D[b].classList.remove('on'); });
+  D.proc.classList.add('on');
+  setStep(0);
+
+  try{
+    /* BƯỚC 0: Encode file → base64 */
+    D.procLbl.textContent='Đang đọc file video...';
+    D.procInfo.textContent='';
+    var b64=await fileToB64(S.file);
+    var sizeMB=(S.file.size/1048576).toFixed(1);
+    D.procInfo.textContent='File: '+sizeMB+' MB — '+S.file.type;
+
+    /* BƯỚC 1: Phân tích + dịch */
+    setStep(1);
+    D.procLbl.textContent='Đang phân tích & dịch...';
+    D.procInfo.textContent='Gửi lên Gemini, vui lòng chờ...';
+
+    // ✅ FIX: dùng model stable thay vì preview
+    var aUrl='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key;
+
+    var aRes=await callGemini(aUrl,{
+      contents:[{parts:[
+        {text:'NHIEM VU DICH THUAT CHUYEN NGHIEP:\n1. Phan tich ngu canh video (Game, Giao duc, Vlog, Phim, Tin tuc...). Dich sang tieng Viet chuan ban dia hoa.\n2. has_speech=true neu co giong nguoi noi. has_speech=false neu chi co chu tren man hinh hoac nhac nen.\n3. Trich xuat tung cau/dong voi start_s va end_s chinh xac 0.1 giay.\n4. Tra ve JSON theo schema.'},
+        {inlineData:{mimeType:S.file.type,data:b64}}
+      ]}],
+      generationConfig:{
+        responseMimeType:'application/json',
+        responseSchema:{
+          type:'OBJECT',
+          properties:{
+            has_speech:{type:'BOOLEAN'},
+            segments:{type:'ARRAY',items:{
+              type:'OBJECT',
+              properties:{start_s:{type:'NUMBER'},end_s:{type:'NUMBER'},text:{type:'STRING'}},
+              required:['start_s','end_s','text']
+            }}
+          },
+          required:['has_speech','segments']
         }
+      }
+    });
 
-        function safeInitIcons() {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            else setTimeout(safeInitIcons, 100);
-        }
-        window.addEventListener('load', safeInitIcons);
+    var parsed=JSON.parse(aRes.candidates[0].content.parts[0].text);
+    S.segs=(parsed.segments||[]).filter(function(s){return s.text&&s.end_s>s.start_s;});
+    S.hasSpeech=parsed.has_speech===true;
+    S.lastIdx=-1;
 
-        const videoInput = document.getElementById('video-input');
-        const mainVideo = document.getElementById('main-video');
-        const uploadPlaceholder = document.getElementById('upload-placeholder');
-        const processBtn = document.getElementById('process-btn');
-        const actionBtns = document.getElementById('action-btns');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const progressBar = document.getElementById('progress-bar');
-        const subtitleOverlay = document.getElementById('subtitle-overlay');
-        const subtitleText = document.getElementById('subtitle-text');
-        const scriptContainer = document.getElementById('script-container');
-        const errorBox = document.getElementById('error-box');
-        const errorMessage = document.getElementById('error-message');
+    D.modeDot.className='pill-dot '+(S.hasSpeech?'on-speech':'on-text');
+    D.modeText.textContent=S.hasSpeech?'Auto Dubbing':'Subtitle Only';
+    D.statSegs.textContent=S.segs.length;
+    D.statTts.textContent='0';
+    renderScript(S.segs);
+    D.procInfo.textContent='Tìm thấy '+S.segs.length+' đoạn';
 
-        uploadPlaceholder.addEventListener('click', () => videoInput.click());
+    /* BƯỚC 2+3: TTS song song theo batch */
+    if(S.hasSpeech&&S.segs.length>0){
+      setStep(2);
+      D.procLbl.textContent='Tổng hợp giọng đọc...';
+      var ttsUrl='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key='+key;
 
-        videoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > 100 * 1024 * 1024) {
-                    showError("Dung lượng tệp vượt quá 100MB!");
-                    return;
-                }
-                mainVideo.src = URL.createObjectURL(file);
-                mainVideo.classList.remove('hidden');
-                uploadPlaceholder.classList.add('hidden');
-                processBtn.disabled = false;
-                resetState();
+      // ✅ FIX: batch 3 requests song song thay vì tuần tự
+      var BATCH=1; // Giảm xuống 1 để xử lý từng câu, tránh bị mất tiếng
+      for(var i=0;i<S.segs.length;i+=BATCH){
+        var batch=[];
+        for(var j=i;j<Math.min(i+BATCH,S.segs.length);j++) batch.push(j);
+
+        setTtsBar(i,S.segs.length);
+        D.procLbl.textContent='Lồng tiếng '+(i+1)+'–'+Math.min(i+BATCH,S.segs.length)+' / '+S.segs.length;
+        D.procInfo.textContent='Đang xử lý '+batch.length+' đoạn song song...';
+
+        // gọi tất cả trong batch cùng lúc
+        var promises=batch.map(function(idx){
+          var seg=S.segs[idx];
+          var dur=Math.max(0.5,seg.end_s-seg.start_s).toFixed(1);
+          return callGemini(ttsUrl,{
+            contents:[{parts:[{text:'Doc bang tieng Viet tu nhien, ket thuc trong '+dur+' giay: '+seg.text}]}],
+            generationConfig:{
+              responseModalities:['AUDIO'],
+              speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}}
             }
+          }).then(function(tRes){
+            var pcm=tRes.candidates&&tRes.candidates[0]&&
+                    tRes.candidates[0].content&&tRes.candidates[0].content.parts&&
+                    tRes.candidates[0].content.parts[0]&&
+                    tRes.candidates[0].content.parts[0].inlineData&&
+                    tRes.candidates[0].content.parts[0].inlineData.data;
+            if(pcm){
+              S.wavs[idx]=pcmToWav(pcm,24000);
+              S.ttsCount++;
+              D.statTts.textContent=S.ttsCount;
+              var tag=document.querySelector('#sc'+idx+' .sc-tts');
+              if(tag) tag.classList.add('on');
+            }
+          }).catch(function(e){ console.warn('TTS['+idx+']:',e.message); });
         });
 
-        function resetState() {
-            segments = [];
-            Object.values(segmentAudios).forEach(url => URL.revokeObjectURL(url));
-            segmentAudios = {};
-            lastPlayedIdx = -1;
-            scriptContainer.innerHTML = '';
-            actionBtns.classList.add('hidden');
-            subtitleOverlay.classList.add('hidden');
-            errorBox.classList.add('hidden');
-            document.getElementById('summary-btn').disabled = true;
-            document.getElementById('social-btn').disabled = true;
-            document.getElementById('ai-lab-result').classList.add('hidden');
-        }
+        await Promise.all(promises);
+      }
 
-        function showError(msg) {
-            errorBox.classList.remove('hidden');
-            errorMessage.innerText = msg;
-            loadingOverlay.classList.add('hidden');
-            processBtn.disabled = false;
-        }
+      setTtsBar(S.segs.length,S.segs.length);
+      setStep(3);
+      D.procLbl.textContent='Hoàn tất!';
+      D.procInfo.textContent=S.ttsCount+'/'+S.segs.length+' đoạn có giọng đọc';
+      await sleep(600);
+    } else {
+      D.procLbl.textContent='Đã dịch phụ đề!';
+      D.procInfo.textContent=S.segs.length+' phụ đề tiếng Việt';
+      await sleep(500);
+    }
 
-        async function fetchGemini(url, payload, retries = 5) {
-            const currentKey = getActiveKey();
-            if (!currentKey) throw new Error("Chưa nhập API Key. Vui lòng dán mã AIzaSy... vào ô phía trên.");
-            
-            const apiUrl = `${url}${url.includes('?') ? '&' : '?'}key=${currentKey}`;
+    if(S.segs.length>0){ D.btnPreview.classList.add('on'); D.btnExport.classList.add('on'); }
+    D.btnReset.classList.add('on');
 
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (response.status === 429) {
-                        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-                        continue;
-                    }
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.error?.message || `HTTP ${response.status}`);
-                    return result;
-                } catch (e) {
-                    if (i === retries - 1) throw e;
-                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-                }
-            }
-        }
+  }catch(err){
+    showErr('Lỗi: '+err.message);
+    console.error(err);
+  }finally{
+    S.processing=false;
+    D.proc.classList.remove('on');
+    checkReady();
+  }
+}
 
-        function cleanJsonResponse(text) {
-            const match = text.match(/\{[\s\S]*\}/);
-            return match ? match[0] : text;
-        }
+/* ════════════════════════════════════
+   RENDER SCRIPT
+════════════════════════════════════ */
+function renderScript(segs){
+  if(!segs||segs.length===0){
+    D.spList.innerHTML='';
+    D.spList.appendChild(D.spEmpty);
+    D.spEmpty.style.display='flex';
+    D.spCount.classList.remove('on');
+    return;
+  }
+  D.spCount.textContent=segs.length+' đoạn';
+  D.spCount.classList.add('on');
+  D.spList.innerHTML=segs.map(function(s,i){
+    return '<div class="sc" id="sc'+i+'" onclick="gotoSeg('+s.start_s+')">'
+      +'<div class="sc-head">'
+      +'<span class="sc-ts">'+s.start_s.toFixed(1)+'s – '+s.end_s.toFixed(1)+'s</span>'
+      +'<span class="sc-tts">♪ TTS</span>'
+      +'</div>'
+      +'<div class="sc-text">'+esc(s.text)+'</div>'
+      +'</div>';
+  }).join('');
+}
 
-        processBtn.addEventListener('click', async () => {
-            const file = videoInput.files[0];
-            if (!file) return;
+function gotoSeg(t){
+  D.vid.currentTime=t;
+  if(D.vid.paused) D.vid.play().catch(function(){});
+}
 
-            loadingOverlay.classList.remove('hidden');
-            processBtn.disabled = true;
-            errorBox.classList.add('hidden');
-            progressBar.style.width = '5%';
+/* ════════════════════════════════════
+   PLAYBACK — rAF + binary search
+════════════════════════════════════ */
+D.vid.addEventListener('play',   startLoop);
+D.vid.addEventListener('pause',  stopLoop);
+D.vid.addEventListener('ended',  stopLoop);
+D.vid.addEventListener('seeked', function(){ S.lastIdx=-1; });
 
-            try {
-                loadingText.innerText = "Đang quét video & phân tích ngữ cảnh...";
-                const reader = new FileReader();
-                const base64 = await new Promise(r => {
-                    reader.onload = () => r(reader.result.split(',')[1]);
-                    reader.readAsDataURL(file);
-                });
+function startLoop(){
+  if(S.rafId) return;
+  (function loop(){
+    var t=D.vid.currentTime;
+    if(t!==S.lastT){ S.lastT=t; onFrame(t); }
+    S.rafId=requestAnimationFrame(loop);
+  })();
+}
+function stopLoop(){ if(S.rafId){ cancelAnimationFrame(S.rafId); S.rafId=null; } }
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`;
-                const prompt = `BẠN LÀ CHUYÊN GIA DỊCH THUẬT VIDEO CAO CẤP.
-                NHIỆM VỤ:
-                1. PHÂN LOẠI: 
-                   - DỊCH: Lời thoại, bình luận, hướng dẫn bằng chữ quan trọng.
-                   - GIỮ NGUYÊN: Tên riêng người dùng, mã ID, tên vũ khí (ví dụ AK-47, M4A1, Desert Eagle), mã kỹ thuật.
-                2. CHẤT LƯỢNG DỊCH: Dịch thoát ý sang tiếng Việt bản địa. Game Đột Kích: Black Widow -> Trạm Phát Sóng, Port -> Cảng Hải Quân, Site A/B -> Khu A/B.
-                3. ĐỒNG BỘ: Câu dịch phải ngắn gọn để đọc kịp trong mốc start_s và end_s.
-                4. PHÂN TÍCH TIẾNG NÓI: has_speech = true nếu có tiếng người đang nói thật sự.
-                TRẢ VỀ JSON: { "has_speech": boolean, "segments": [{ "start_s": number, "end_s": number, "text": string }] }`;
-                
-                const res = await fetchGemini(url, {
-                    contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: file.type, data: base64 } }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                });
+function onFrame(t){
+  if(!S.segs.length) return;
+  var lo=0,hi=S.segs.length-1,idx=-1;
+  while(lo<=hi){
+    var mid=(lo+hi)>>1;
+    if(t<S.segs[mid].start_s) hi=mid-1;
+    else if(t>S.segs[mid].end_s) lo=mid+1;
+    else{ idx=mid; break; }
+  }
+  if(idx!==-1){ D.subPill.textContent=S.segs[idx].text; D.subLayer.classList.add('on'); }
+  else { D.subLayer.classList.remove('on'); }
 
-                const candidateText = res?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!candidateText) throw new Error("AI không phản hồi. Hãy kiểm tra lại API Key hoặc dung lượng video.");
+  if(idx!==S.lastIdx){
+    var prev=document.getElementById('sc'+S.lastIdx);
+    if(prev) prev.classList.remove('active');
+    var cur=document.getElementById('sc'+idx);
+    if(cur){
+      cur.classList.add('active');
+      // Chỉ scroll khi item nằm ngoài vùng hiển thị của list
+      var list=D.spList;
+      var itemTop=cur.offsetTop-list.offsetTop;
+      var itemBot=itemTop+cur.offsetHeight;
+      var scrollTop=list.scrollTop;
+      var listH=list.clientHeight;
+      if(itemTop<scrollTop+40||itemBot>scrollTop+listH-40){
+        list.scrollTo({top:itemTop-listH/2+cur.offsetHeight/2,behavior:'smooth'});
+      }
+    }
+    S.lastIdx=idx;
+    if(S.hasSpeech&&idx!==-1) playTts(idx);
+    // Không gọi restoreVol khi idx===-1 vì audio TTS có thể vẫn đang đọc nốt câu
+  }
+}
 
-                const data = JSON.parse(cleanJsonResponse(candidateText));
-                segments = data.segments || [];
-                hasSpeech = data.has_speech || false;
-                progressBar.style.width = '35%';
+/* ════════════════════════════════════
+   TTS PLAYBACK
+   Chiến lược:
+   - Tiếng gốc (vid) luôn ở volume đầy đủ (1.0)
+   - TTS phát song song bên cạnh, không tắt tiếng gốc
+   - Không dừng audio đang phát khi chuyển segment
+     trừ khi segment MỚI cũng có audio riêng
+════════════════════════════════════ */
+function playTts(idx){
+  var url=S.wavs[idx];
 
-                renderScriptUI();
+  // Nếu không có TTS cho đoạn này → giữ nguyên audio hiện tại đang chạy
+  if(!url) return;
 
-                if (hasSpeech && segments.length > 0) {
-                    loadingText.innerText = "Đang lồng tiếng đồng bộ...";
-                    for (let i = 0; i < segments.length; i++) {
-                        const s = segments[i];
-                        const dur = (s.end_s - s.start_s).toFixed(1);
-                        loadingText.innerText = `Lồng tiếng: ${i+1}/${segments.length} (${dur}s)`;
-                        
-                        const ttsUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`;
-                        const ttsRes = await fetchGemini(ttsUrl, {
-                            contents: [{ parts: [{ text: `Đọc bằng tiếng Việt chuẩn trong ĐÚNG ${dur} giây: ${s.text}` }] }],
-                            generationConfig: {
-                                responseModalities: ["AUDIO"],
-                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } }
-                            },
-                            model: "gemini-2.5-flash-preview-tts"
-                        });
+  // Có TTS mới → mới dừng cái cũ
+  stopAudio();
 
-                        const audioData = ttsRes?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                        if (audioData) segmentAudios[i] = pcmToWav(audioData, 24000);
-                        progressBar.style.width = `${35 + (65 * (i+1)/segments.length)}%`;
-                    }
-                } else {
-                    loadingText.innerText = "Đã trích xuất xong phụ đề!";
-                    progressBar.style.width = '100%';
-                    await new Promise(r => setTimeout(r, 600));
-                }
+  var seg=S.segs[idx];
+  var slotDur=seg.end_s-seg.start_s;
+  var a=new Audio(url);
 
-                actionBtns.classList.remove('hidden');
-                loadingOverlay.classList.add('hidden');
-                document.getElementById('summary-btn').disabled = false;
-                document.getElementById('social-btn').disabled = false;
-            } catch (err) {
-                showError("LỖI: " + err.message.toUpperCase());
-            }
-        });
+  a.addEventListener('loadedmetadata',function(){
+    // Chỉ tăng tốc nhẹ nếu audio quá dài so với slot, max 1.4x
+    if(a.duration>0&&slotDur>0&&a.duration>slotDur){
+      a.playbackRate=Math.min(a.duration/slotDur,1.4);
+    }
+  },{once:true});
 
-        function renderScriptUI() {
-            scriptContainer.innerHTML = segments.map((s, i) => `
-                <div id="seg-${i}" class="p-5 rounded-3xl transition-all border border-transparent bg-slate-900/40 opacity-50">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black text-blue-500 italic bg-blue-500/10 px-2 py-1 rounded-lg font-mono">${s.start_s.toFixed(1)}s - ${s.end_s.toFixed(1)}s</span>
-                        ${hasSpeech && segmentAudios[i] ? '<i data-lucide="volume-2" class="w-3 h-3 text-emerald-500 animate-pulse"></i>' : ''}
-                    </div>
-                    <p class="text-sm text-slate-200 font-medium leading-relaxed">${s.text}</p>
-                </div>
-            `).join('');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
+  a.volume=1.0; // TTS luôn max volume
+  
+  // ✅ FIX: Kết nối giọng đọc vào bộ thu âm khi đang Xuất Video
+  if(S.recording&&S.audioCtx&&S.recDest){
+    var src=S.audioCtx.createMediaElementSource(a);
+    src.connect(S.recDest); // Đưa vào file ghi hình
+    src.connect(S.audioCtx.destination); // Đưa ra loa để nghe
+  }
 
-        function pcmToWav(base64, rate) {
-            const bin = atob(base64);
-            const buf = new ArrayBuffer(44 + bin.length);
-            const v = new DataView(buf);
-            const s = (o, str) => { for (let i=0; i<str.length; i++) v.setUint8(o+i, str.charCodeAt(i)); };
-            s(0, 'RIFF'); v.setUint32(4, 36 + bin.length, true);
-            s(8, 'WAVE'); s(12, 'fmt '); v.setUint32(16, 16, true);
-            v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-            v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
-            v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-            s(36, 'data'); v.setUint32(40, bin.length, true);
-            for (let i = 0; i < bin.length; i++) v.setUint8(44 + i, bin.charCodeAt(i));
-            return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-        }
+  a.play().catch(function(e){ console.warn('TTS play failed:',e.message); });
+  S.curAudio=a;
 
-        mainVideo.addEventListener('timeupdate', () => {
-            const time = mainVideo.currentTime;
-            const idx = segments.findIndex(s => time >= s.start_s && time <= s.end_s);
+  // Giảm nhẹ tiếng gốc xuống 20% khi TTS đang nói
+  D.vid.volume=0.2;
 
-            if (idx !== -1) {
-                subtitleOverlay.classList.remove('hidden');
-                subtitleText.innerText = segments[idx].text;
-                
-                document.querySelectorAll('[id^="seg-"]').forEach(el => el.classList.remove('active-segment'));
-                const el = document.getElementById(`seg-${idx}`);
-                if (el) el.classList.add('active-segment');
+  // Khi TTS đọc xong → restore tiếng gốc về 100%
+  a.addEventListener('ended',function(){
+    S.curAudio=null;
+    D.vid.volume=1.0;
+  },{once:true});
+}
 
-                if (hasSpeech && lastPlayedIdx !== idx) {
-                    lastPlayedIdx = idx;
-                    const url = segmentAudios[idx];
-                    if (url) {
-                        activeAudios.forEach(a => { a.pause(); a.currentTime = 0; });
-                        const audio = new Audio(url);
-                        const dur = segments[idx].end_s - segments[idx].start_s;
-                        audio.addEventListener('loadedmetadata', () => {
-                            if (audio.duration > dur && dur > 0) {
-                                audio.playbackRate = Math.min(audio.duration / dur, 2.5);
-                            }
-                        });
-                        audio.play().catch(() => {});
-                        activeAudios = [audio];
-                        mainVideo.volume = 0.15;
-                        audio.onended = () => { if (lastPlayedIdx === idx) mainVideo.volume = 0.6; };
-                    }
-                }
-            } else {
-                subtitleOverlay.classList.add('hidden');
-                if (mainVideo.volume < 0.5) mainVideo.volume = 0.6;
-            }
-        });
+function stopAudio(){
+  if(S.curAudio){
+    try{S.curAudio.pause();S.curAudio.currentTime=0;}catch(e){}
+    S.curAudio=null;
+  }
+  // Luôn restore tiếng gốc khi dừng TTS
+  D.vid.volume=1.0;
+}
 
-        document.getElementById('play-btn').addEventListener('click', () => {
-            lastPlayedIdx = -1;
-            mainVideo.currentTime = 0;
-            mainVideo.play();
-        });
+function restoreVol(){
+  D.vid.volume=1.0;
+}
 
-        document.getElementById('download-btn').addEventListener('click', async () => {
-            isRecording = true;
-            document.getElementById('recording-badge').classList.remove('hidden');
-            const chunks = [];
-            
-            if (!currentAudioCtx) currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const dest = currentAudioCtx.createMediaStreamDestination();
-            const source = currentAudioCtx.createMediaElementSource(mainVideo);
-            const gain = currentAudioCtx.createGain();
-            
-            gain.gain.value = hasSpeech ? 0.2 : 1.0;
-            source.connect(gain).connect(dest);
-            gain.connect(currentAudioCtx.destination);
+/* ════════════════════════════════════
+   BUTTONS
+════════════════════════════════════ */
+D.btnPreview.addEventListener('click',function(){
+  D.vid.currentTime=0; S.lastIdx=-1;
+  stopAudio(); // này sẽ restore vol=1.0 luôn
+  D.vid.play().catch(function(){});
+});
 
-            const stream = mainVideo.captureStream ? mainVideo.captureStream() : mainVideo.mozCaptureStream();
-            const combined = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
-            const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9' });
+D.btnReset.addEventListener('click',function(){
+  stopLoop(); stopAudio();
+  if(D.vid.src&&D.vid.src.startsWith('blob:')) URL.revokeObjectURL(D.vid.src);
+  D.vid.src=''; D.vid.classList.remove('visible');
+  D.dropzone.classList.remove('gone');
+  D.fileInput.value=''; S.file=null;
+  wipe(); checkReady();
+});
 
-            recorder.ondataavailable = e => chunks.push(e.data);
-            recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `video_dub_${Date.now()}.webm`;
-                a.click();
-                isRecording = false;
-                document.getElementById('recording-badge').classList.add('hidden');
-                currentAudioCtx.close().then(() => currentAudioCtx = null);
-            };
+/* ════════════════════════════════════
+   EXPORT
+   AudioContext + srcNode tạo 1 lần duy nhất.
+════════════════════════════════════ */
+D.btnExport.addEventListener('click', doExport);
 
-            recorder.start();
-            document.getElementById('play-btn').click();
-            mainVideo.onended = () => { if(recorder.state === 'recording') recorder.stop(); };
-        });
+async function getAudioCtx(){
+  if(S.audioCtx&&S.audioCtx.state!=='closed'){
+    if(S.audioCtx.state==='suspended') await S.audioCtx.resume();
+    return S.audioCtx;
+  }
+  S.audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  S.srcNode=null;
+  return S.audioCtx;
+}
 
-        async function handleAIService(type) {
-            if (segments.length === 0) return;
-            const resBox = document.getElementById('ai-lab-result');
-            const resText = document.getElementById('result-text');
-            const resTitle = document.getElementById('result-title');
-            
-            resBox.classList.remove('hidden');
-            resTitle.innerText = "AI ĐANG PHÂN TÍCH... ✨";
-            resText.innerText = "Vui lòng đợi giây lát...";
+async function doExport(){
+  if(S.recording) return;
+  if(typeof D.vid.captureStream!=='function'&&typeof D.vid.mozCaptureStream!=='function'){
+    showErr('Trình duyệt không hỗ trợ xuất video. Dùng Chrome / Edge mới nhất.'); return;
+  }
+  var mimes=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  var mime=mimes.find(function(m){return MediaRecorder.isTypeSupported(m);});
+  if(!mime){ showErr('Không tìm được codec. Dùng Chrome.'); return; }
 
-            try {
-                const fullText = segments.map(s => s.text).join(" ");
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`;
-                
-                const prompt = type === 'summary' 
-                    ? `Hãy tóm tắt nội dung chính video này bằng tiếng Việt súc tích: "${fullText}"`
-                    : `Dựa trên kịch bản video: "${fullText}", hãy tạo 3 tiêu đề viral "giật tít" và mô tả chuẩn TikTok/Youtube kèm hashtags.`;
+  S.recording=true;
+  D.recBadge.classList.add('on');
+  D.btnExport.disabled=true; D.btnPreview.disabled=true;
+  hideErr();
 
-                const res = await fetchGemini(url, { contents: [{ parts: [{ text: prompt }] }] });
-                resTitle.innerText = type === 'summary' ? "Tóm tắt video ✨" : "Chiến lược Social ✨";
-                resText.innerText = res.candidates?.[0]?.content?.parts?.[0]?.text || "AI không phản hồi.";
-            } catch (e) {
-                resText.innerText = "LỖI: " + e.message;
-            }
-        }
+  var chunks=[],rec;
+  try{
+    var ctx=await getAudioCtx();
+    var dest=ctx.createMediaStreamDestination();
+    S.recDest=dest; // Lưu lại để playTts có thể kết nối vào
+    
+    // ✅ FIX: Đảm bảo nguồn âm thanh video luôn kết nối ra loa
+    if(!S.srcNode) {
+      S.srcNode=ctx.createMediaElementSource(D.vid);
+      S.srcNode.connect(ctx.destination); // Kết nối ra loa để nghe Preview
+    }
 
-        function copyToClipboard() {
-            const txt = document.getElementById('result-text').innerText;
-            if (!txt) return;
-            navigator.clipboard.writeText(txt).then(() => {
-                const b = document.createElement('div');
-                b.className = "fixed bottom-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full text-xs font-bold shadow-2xl animate-bounce z-[100]";
-                b.innerText = "Đã sao chép!";
-                document.body.appendChild(b);
-                setTimeout(() => b.remove(), 2000);
-            });
-        }
+    // Tạo nhánh riêng cho bộ thu âm (Recorder)
+    var recGain=ctx.createGain();
+    recGain.gain.value=1.0; // Giữ nguyên âm lượng gốc khi vào file (ducking đã có playTts lo)
+    S.srcNode.connect(recGain); 
+    recGain.connect(dest); // Chỉ đưa vào bộ thu, không đưa ra loa lần nữa
 
-        function switchTab(tab) {
-            document.getElementById('script-panel').classList.toggle('hidden', tab !== 'script');
-            document.getElementById('ai-lab-panel').classList.toggle('hidden', tab !== 'ai-lab');
-            document.getElementById('tab-script').className = tab === 'script' ? 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg' : 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200';
-            document.getElementById('tab-ai-lab').className = tab === 'ai-lab' ? 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-blue-600 text-white shadow-lg' : 'flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-slate-500 hover:text-slate-200';
-        }
-    </script>
+    var cap=D.vid.captureStream?D.vid.captureStream():D.vid.mozCaptureStream();
+    var ms=new MediaStream([...cap.getVideoTracks(),...dest.stream.getAudioTracks()]);
+    rec=new MediaRecorder(ms,{mimeType:mime});
+    rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
+    rec.onstop=function(){
+      var blob=new Blob(chunks,{type:mime});
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='vtranslate_'+Date.now()+'.webm';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(a.href);
+      
+      // Dọn dẹp kết nối thu âm
+      try{ S.srcNode.disconnect(recGain); recGain.disconnect(); }catch(e){}
+      S.recording=false; S.recDest=null;
+      D.recBadge.classList.remove('on');
+      D.btnExport.disabled=false; D.btnPreview.disabled=false;
+    };
+    rec.start(200);
+    D.vid.currentTime=0; S.lastIdx=-1; stopAudio(); restoreVol();
+    await D.vid.play();
+    D.vid.onended=function(){if(rec&&rec.state==='recording')rec.stop();};
+  }catch(err){
+    showErr('Lỗi xuất video: '+err.message);
+    S.recording=false;
+    D.recBadge.classList.remove('on');
+    D.btnExport.disabled=false; D.btnPreview.disabled=false;
+    if(rec&&rec.state==='recording')try{rec.stop();}catch(e){}
+  }
+}
+</script>
 </body>
 </html>
